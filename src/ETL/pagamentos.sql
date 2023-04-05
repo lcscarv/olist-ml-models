@@ -27,8 +27,9 @@ sum(vlPagamento) as vlPedidoMeioPagamento
 FROM tb_join
 GROUP BY idVendedor,descTipoPagamento
 ORDER BY idVendedor,descTipoPagamento
-)
+),
 
+tb_summary AS (
 SELECT idVendedor,
 SUM(CASE WHEN descTipoPagamento = 'boleto' THEN qtdPedidoMeioPagamento ELSE 0 END) AS qtd_boletoPedido,
 SUM(CASE WHEN descTipoPagamento = 'credit_card' THEN qtdPedidoMeioPagamento ELSE 0 END) AS qtd_credit_cardPedido,
@@ -53,7 +54,36 @@ SUM(CASE WHEN descTipoPagamento = 'debit_card' THEN vlPedidoMeioPagamento ELSE 0
 FROM tb_group
 
 GROUP BY 1
+),
 
+tb_cartao as (
+
+  SELECT idVendedor,
+         AVG(nrParcelas) AS avgQtdeParcelas,
+         PERCENTILE(nrParcelas, 0.5) AS medianQtdeParcelas,
+         MAX(nrParcelas) AS maxQtdeParcelas,
+         MIN(nrParcelas) AS minQtdeParcelas
+
+  FROM tb_join
+
+  WHERE descTipoPagamento = 'credit_card'
+
+  GROUP BY idVendedor
+
+)
+
+SELECT 
+       '2018-01-01' AS dtReference,
+       t1.*,
+       t2.avgQtdeParcelas,
+       t2.medianQtdeParcelas,
+       t2.maxQtdeParcelas,
+       t2.minQtdeParcelas
+
+FROM tb_summary as t1
+
+LEFT JOIN tb_cartao as t2
+ON t1.idVendedor = t2.idVendedor
 
 -- COMMAND ----------
 
